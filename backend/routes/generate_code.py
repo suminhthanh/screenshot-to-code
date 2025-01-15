@@ -262,7 +262,12 @@ async def stream_code(websocket: WebSocket):
                 else:
                     claude_model = Llm.CLAUDE_3_5_SONNET_2024_06_20
 
-                if openai_api_key and anthropic_api_key:
+                if openai_api_key and openai_base_url == "https://generativelanguage.googleapis.com/v1beta/openai/":
+                    variant_models = [
+                        Llm.GEMINI_2_0_FLASH_EXP,
+                        Llm.GEMINI_2_0_FLASH_EXP,
+                    ]
+                elif openai_api_key and anthropic_api_key:
                     variant_models = [
                         claude_model,
                         Llm.GPT_4O_2024_11_20,
@@ -310,6 +315,15 @@ async def stream_code(websocket: WebSocket):
                                 api_key=GEMINI_API_KEY,
                                 callback=lambda x, i=index: process_chunk(x, i),
                                 model=model,
+                            )
+                        )
+                    elif model == Llm.GEMINI_2_0_FLASH_EXP and openai_api_key:
+                        tasks.append(
+                            stream_gemini_response(
+                                prompt_messages,
+                                api_key=openai_api_key,
+                                callback=lambda x, i=index: process_chunk(x, i),
+                                model=Llm.GEMINI_2_0_FLASH_EXP,
                             )
                         )
                     elif (
