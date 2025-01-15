@@ -66,7 +66,7 @@ function App() {
       isImageGenerationEnabled: true,
       editorTheme: EditorTheme.COBALT,
       generatedCodeConfig: Stack.HTML_TAILWIND,
-      codeGenerationModel: CodeGenerationModel.CLAUDE_3_5_SONNET_2024_06_20,
+      codeGenerationModel: CodeGenerationModel.GEMINI_2_0_FLASH_EXP,
       // Only relevant for hosted version
       isTermOfServiceAccepted: false,
     },
