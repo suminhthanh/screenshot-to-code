@@ -265,7 +265,7 @@ async def stream_code(websocket: WebSocket):
                 if openai_api_key and openai_base_url == "https://generativelanguage.googleapis.com/v1beta/openai/":
                     variant_models = [
                         Llm.GEMINI_2_0_FLASH_EXP,
-                        Llm.GEMINI_2_0_FLASH_EXP,
+                        Llm.GEMINI_2_0_FLASH,
                     ]
                 elif openai_api_key and anthropic_api_key:
                     variant_models = [
@@ -282,6 +282,11 @@ async def stream_code(websocket: WebSocket):
                         claude_model,
                         Llm.CLAUDE_3_5_SONNET_2024_06_20,
                     ]
+                elif GEMINI_API_KEY:
+                    variant_models = [
+                        Llm.GEMINI_2_0_FLASH_EXP,
+                        Llm.GEMINI_2_0_FLASH,
+                    ]
                 else:
                     await throw_error(
                         "No OpenAI or Anthropic API key found. Please add the environment variable OPENAI_API_KEY or ANTHROPIC_API_KEY to backend/.env or in the settings dialog. If you add it to .env, make sure to restart the backend server."
@@ -290,7 +295,7 @@ async def stream_code(websocket: WebSocket):
 
                 tasks: List[Coroutine[Any, Any, Completion]] = []
                 for index, model in enumerate(variant_models):
-                    if model == Llm.GPT_4O_2024_11_20 or model == Llm.O1_2024_12_17 or model == Llm.GEMINI_2_0_FLASH_EXP:
+                    if model == Llm.GPT_4O_2024_11_20 or model == Llm.O1_2024_12_17:
                         if openai_api_key is None:
                             await throw_error("OpenAI API key is missing.")
                             raise Exception("OpenAI API key is missing.")
@@ -304,15 +309,30 @@ async def stream_code(websocket: WebSocket):
                                 model=model,
                             )
                         )
+                    elif openai_api_key and (
+                        model == Llm.GEMINI_2_0_PRO_EXP
+                        or model == Llm.GEMINI_2_0_FLASH_EXP
+                        or model == Llm.GEMINI_2_0_FLASH
+                    ):
+                        tasks.append(
+                            stream_openai_response(
+                                prompt_messages,
+                                api_key=openai_api_key,
+                                base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+                                callback=lambda x, i=index: process_chunk(x, i),
+                                model=Llm.GEMINI_2_0_FLASH,
+                            )
+                        )
                     elif GEMINI_API_KEY and (
                         model == Llm.GEMINI_2_0_PRO_EXP
                         or model == Llm.GEMINI_2_0_FLASH_EXP
                         or model == Llm.GEMINI_2_0_FLASH
                     ):
                         tasks.append(
-                            stream_gemini_response(
+                            stream_openai_response(
                                 prompt_messages,
                                 api_key=GEMINI_API_KEY,
+                                base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
                                 callback=lambda x, i=index: process_chunk(x, i),
                                 model=model,
                             )
