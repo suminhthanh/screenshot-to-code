@@ -1,12 +1,16 @@
 import copy
 from enum import Enum
-from typing import Any, Awaitable, Callable, List, cast
+import base64
+import time
+from typing import Any, Awaitable, Callable, List, cast, TypedDict
 from anthropic import AsyncAnthropic
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionChunk
 from config import IS_DEBUG_ENABLED
 from debug.DebugFileWriter import DebugFileWriter
 from image_processing.utils import process_image
+from google import genai
+from google.genai import types
 
 from utils import pprint_prompt
 
@@ -16,21 +20,20 @@ class Llm(Enum):
     GPT_4_VISION = "gpt-4-vision-preview"
     GPT_4_TURBO_2024_04_09 = "gpt-4-turbo-2024-04-09"
     GPT_4O_2024_05_13 = "gpt-4o-2024-05-13"
+    GPT_4O_2024_08_06 = "gpt-4o-2024-08-06"
+    GPT_4O_2024_11_20 = "gpt-4o-2024-11-20"
     CLAUDE_3_SONNET = "claude-3-sonnet-20240229"
     CLAUDE_3_OPUS = "claude-3-opus-20240229"
     CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
     CLAUDE_3_5_SONNET_2024_06_20 = "claude-3-5-sonnet-20240620"
     CLAUDE_3_5_SONNET_2024_10_22 = "claude-3-5-sonnet-20241022"
+    GEMINI_2_0_FLASH_EXP = "gemini-2.0-flash-exp"
+    O1_2024_12_17 = "o1-2024-12-17"
 
 
-# Will throw errors if you send a garbage string
-def convert_frontend_str_to_llm(frontend_str: str) -> Llm:
-    if frontend_str == "gpt_4_vision":
-        return Llm.GPT_4_VISION
-    elif frontend_str == "claude_3_sonnet":
-        return Llm.CLAUDE_3_SONNET
-    else:
-        return Llm(frontend_str)
+class Completion(TypedDict):
+    duration: float
+    code: str
 
 
 async def stream_openai_response(
@@ -39,43 +42,55 @@ async def stream_openai_response(
     base_url: str | None,
     callback: Callable[[str], Awaitable[None]],
     model: Llm,
-) -> str:
+) -> Completion:
+    start_time = time.time()
     client = AsyncOpenAI(api_key=api_key, base_url=base_url)
 
     # Base parameters
     params = {
         "model": model.value,
         "messages": messages,
-        "stream": True,
         "timeout": 600,
-        "temperature": 0.0,
     }
 
-    # Add 'max_tokens' only if the model is a GPT4 vision or Turbo model
-    if (
-        model == Llm.GPT_4_VISION
-        or model == Llm.GPT_4_TURBO_2024_04_09
-        or model == Llm.GPT_4O_2024_05_13
-    ):
+    # O1 doesn't support streaming or temperature
+    if model != Llm.O1_2024_12_17:
+        params["temperature"] = 0
+        params["stream"] = True
+
+    # Add 'max_tokens' corresponding to the model
+    if model == Llm.GPT_4O_2024_05_13:
         params["max_tokens"] = 4096
 
-    stream = await client.chat.completions.create(**params)  # type: ignore
-    full_response = ""
-    async for chunk in stream:  # type: ignore
-        assert isinstance(chunk, ChatCompletionChunk)
-        if (
-            chunk.choices
-            and len(chunk.choices) > 0
-            and chunk.choices[0].delta
-            and chunk.choices[0].delta.content
-        ):
-            content = chunk.choices[0].delta.content or ""
-            full_response += content
-            await callback(content)
+    if model == Llm.GPT_4O_2024_11_20:
+        params["max_tokens"] = 16384
+
+    if model == Llm.O1_2024_12_17:
+        params["max_completion_tokens"] = 20000
+
+    # O1 doesn't support streaming
+    if model == Llm.O1_2024_12_17:
+        response = await client.chat.completions.create(**params)  # type: ignore
+        full_response = response.choices[0].message.content  # type: ignore
+    else:
+        stream = await client.chat.completions.create(**params)  # type: ignore
+        full_response = ""
+        async for chunk in stream:  # type: ignore
+            assert isinstance(chunk, ChatCompletionChunk)
+            if (
+                chunk.choices
+                and len(chunk.choices) > 0
+                and chunk.choices[0].delta
+                and chunk.choices[0].delta.content
+            ):
+                content = chunk.choices[0].delta.content or ""
+                full_response += content
+                await callback(content)
 
     await client.close()
 
-    return full_response
+    completion_time = time.time() - start_time
+    return {"duration": completion_time, "code": full_response}
 
 
 # TODO: Have a seperate function that translates OpenAI messages to Claude messages
@@ -84,8 +99,8 @@ async def stream_claude_response(
     api_key: str,
     callback: Callable[[str], Awaitable[None]],
     model: Llm,
-) -> str:
-
+) -> Completion:
+    start_time = time.time()
     client = AsyncAnthropic(api_key=api_key)
 
     # Base parameters
@@ -142,7 +157,8 @@ async def stream_claude_response(
     # Close the Anthropic client
     await client.close()
 
-    return response.content[0].text
+    completion_time = time.time() - start_time
+    return {"duration": completion_time, "code": response.content[0].text}
 
 
 async def stream_claude_response_native(
@@ -152,8 +168,8 @@ async def stream_claude_response_native(
     callback: Callable[[str], Awaitable[None]],
     include_thinking: bool = False,
     model: Llm = Llm.CLAUDE_3_OPUS,
-) -> str:
-
+) -> Completion:
+    start_time = time.time()
     client = AsyncAnthropic(api_key=api_key)
 
     # Base model parameters
@@ -225,10 +241,62 @@ async def stream_claude_response_native(
     # Close the Anthropic client
     await client.close()
 
+    completion_time = time.time() - start_time
+
     if IS_DEBUG_ENABLED:
         debug_file_writer.write_to_file("full_stream.txt", full_stream)
 
     if not response:
         raise Exception("No HTML response found in AI response")
     else:
-        return response.content[0].text
+        return {
+            "duration": completion_time,
+            "code": response.content[0].text,  # type: ignore
+        }
+
+
+async def stream_gemini_response(
+    messages: List[ChatCompletionMessageParam],
+    api_key: str,
+    callback: Callable[[str], Awaitable[None]],
+    model: Llm,
+) -> Completion:
+    start_time = time.time()
+
+    # Extract image URLs from messages
+    image_urls = []
+    for content_part in messages[-1]["content"]:  # type: ignore
+        if content_part["type"] == "image_url":  # type: ignore
+            image_url = content_part["image_url"]["url"]  # type: ignore
+            if image_url.startswith("data:"):  # type: ignore
+                # Extract base64 data and mime type for data URLs
+                mime_type = image_url.split(";")[0].split(":")[1]  # type: ignore
+                base64_data = image_url.split(",")[1]  # type: ignore
+                image_urls = [{"mime_type": mime_type, "data": base64_data}]  # type: ignore
+            else:
+                # Store regular URLs
+                image_urls = [{"uri": image_url}]  # type: ignore
+            break  # Exit after first image URL
+
+    client = genai.Client(api_key=api_key)  # type: ignore
+    full_response = ""
+    async for response in client.aio.models.generate_content_stream(  # type: ignore
+        model=model.value,
+        contents={
+            "parts": [
+                {"text": messages[0]["content"]},  # type: ignore
+                types.Part.from_bytes(  # type: ignore
+                    data=base64.b64decode(image_urls[0]["data"]),  # type: ignore
+                    mime_type=image_urls[0]["mime_type"],  # type: ignore
+                ),
+            ]  # type: ignore
+        },  # type: ignore
+        config=types.GenerateContentConfig(  # type: ignore
+            temperature=0, max_output_tokens=8192
+        ),
+    ):  # type: ignore
+        if response.text:  # type: ignore
+            full_response += response.text  # type: ignore
+            await callback(response.text)  # type: ignore
+    completion_time = time.time() - start_time
+    return {"duration": completion_time, "code": full_response}

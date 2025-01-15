@@ -13,7 +13,7 @@ import toast from "react-hot-toast";
 import { Stack } from "./lib/stacks";
 import { CodeGenerationModel } from "./lib/models";
 import useBrowserTabIndicator from "./hooks/useBrowserTabIndicator";
-import TipLink from "./components/messages/TipLink";
+// import TipLink from "./components/messages/TipLink";
 import { useAppStore } from "./store/app-store";
 import { useProjectStore } from "./store/project-store";
 import Sidebar from "./components/sidebar/Sidebar";
@@ -21,7 +21,6 @@ import PreviewPane from "./components/preview/PreviewPane";
 import DeprecationMessage from "./components/messages/DeprecationMessage";
 import { GenerationSettings } from "./components/settings/GenerationSettings";
 import StartPane from "./components/start-pane/StartPane";
-import { takeScreenshot } from "./lib/takeScreenshot";
 import { Commit } from "./components/commits/types";
 import { createCommit } from "./components/commits/utils";
 
@@ -55,8 +54,6 @@ function App() {
     setUpdateInstruction,
     appState,
     setAppState,
-    shouldIncludeResultImage,
-    setShouldIncludeResultImage,
   } = useAppStore();
 
   // Settings
@@ -111,7 +108,6 @@ function App() {
   // Functions
   const reset = () => {
     setAppState(AppState.INITIAL);
-    setShouldIncludeResultImage(false);
     setUpdateInstruction("");
     disableInSelectAndEditMode();
     resetExecutionConsoles();
@@ -289,15 +285,11 @@ function App() {
     }
 
     const updatedHistory = [...historyTree, modifiedUpdateInstruction];
-    const resultImage = shouldIncludeResultImage
-      ? await takeScreenshot()
-      : undefined;
 
     doGenerateCode({
       generationType: "update",
       inputMode,
       image: referenceImages[0],
-      resultImage,
       history: updatedHistory,
       isImportedFromCode,
     });
@@ -367,7 +359,7 @@ function App() {
           {showBetterModelMessage && <DeprecationMessage />}
 
           {/* Show tip link until coding is complete */}
-          {appState !== AppState.CODE_READY && <TipLink />}
+          {/* {appState !== AppState.CODE_READY && <TipLink />} */}
 
           {IS_RUNNING_ON_CLOUD && !settings.openAiApiKey && <OnboardingNote />}
 
