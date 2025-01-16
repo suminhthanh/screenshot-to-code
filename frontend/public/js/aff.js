@@ -14,6 +14,9 @@ function setupAffiliateLink() {
         // Open the affiliate link
         window.open(AFFILIATE_LINK, "_blank");
 
+        // Track the click event
+        window.umami.track('Affiliate Link Clicked');
+
         // Update the last visit timestamp
         localStorage.setItem(VISIT_KEY, Date.now().toString());
 
