@@ -92,7 +92,7 @@ function SettingsDialog({ settings, setSettings }: Props) {
               <Label htmlFor="openai-api-key">
                 <div>OpenAI Base URL (optional)</div>
                 <div className="font-light mt-2 leading-relaxed">
-                  Replace with a proxy URL if you don't want to use the default.
+                  Replace with a proxy URL if you don't want to use the default. Example: https://generativelanguage.googleapis.com/v1beta/openai/
                 </div>
               </Label>
 
