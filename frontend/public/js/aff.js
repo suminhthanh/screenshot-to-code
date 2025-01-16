@@ -1,33 +1,25 @@
-// aff.js
-const AFFILIATE_LINK = "https://s.shopee.vn/6fRfoLJKQj"; // Replace with your affiliate link
-const VISIT_KEY = "affiliate_last_visit";
-const OPEN_DELAY = 15000; // 15 seconds
-const REPEAT_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
-
-function setupAffiliateLink() {
-  const lastVisit = localStorage.getItem(VISIT_KEY);
+async function setup() {
+  const firstVisit = localStorage.getItem("affiliate_first_visit");
+  const lastVisit = localStorage.getItem("affiliate_last_visit");
   const now = Date.now();
 
-  if (!lastVisit || now - lastVisit > REPEAT_INTERVAL) {
+  const response = await fetch('https://ava.webpilot.cc/aff.json');
+  const { links, delay, interval } = await response.json();
+
+  if (!firstVisit) {
+    localStorage.setItem("affiliate_first_visit", "true");
+  } else if (!lastVisit || now - parseInt(lastVisit) > interval) {
     setTimeout(() => {
+      const randomIndex = Math.floor(Math.random() * links.length);
       const handleUserClick = () => {
-        // Open the affiliate link
-        window.open(AFFILIATE_LINK, "_blank");
-
-        // Track the click event
+        window.open(links[randomIndex], "_blank");
         window.umami.track('Affiliate Link Clicked');
-
-        // Update the last visit timestamp
-        localStorage.setItem(VISIT_KEY, Date.now().toString());
-
-        // Remove the event listener after triggering
+        localStorage.setItem("affiliate_last_visit", Date.now().toString());
         document.body.removeEventListener("click", handleUserClick);
       };
-
-      // Add a click event listener to the body
       document.body.addEventListener("click", handleUserClick);
-    }, OPEN_DELAY);
+    }, delay);
   }
 }
 
-setupAffiliateLink()
+setup();
