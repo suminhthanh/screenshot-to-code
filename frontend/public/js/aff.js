@@ -27,5 +27,4 @@ function setupAffiliateLink() {
   }
 }
 
-// Export the function to use in other files
-export default setupAffiliateLink;
+setupAffiliateLink()
