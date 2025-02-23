@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "react-hot-toast";
-import ScreenRecorder from "./recording/ScreenRecorder";
+// import ScreenRecorder from "./recording/ScreenRecorder";
 import { ScreenRecorderState } from "../types";
 
 const baseStyle = {
