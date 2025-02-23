@@ -169,7 +169,7 @@ function ImageUpload({ setReferenceImages }: Props) {
           </p>
         </div>
       )}
-      {screenRecorderState === ScreenRecorderState.INITIAL && (
+      {/* {screenRecorderState === ScreenRecorderState.INITIAL && (
         <div className="text-center text-sm text-slate-800 mt-4">
           Upload a screen recording (.mp4, .mov) or record your screen to clone
           a whole app (experimental). Need Anthropic API key.
@@ -179,7 +179,7 @@ function ImageUpload({ setReferenceImages }: Props) {
         screenRecorderState={screenRecorderState}
         setScreenRecorderState={setScreenRecorderState}
         generateCode={setReferenceImages}
-      />
+      /> */}
     </section>
   );
 }
