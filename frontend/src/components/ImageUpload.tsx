@@ -60,8 +60,10 @@ interface Props {
 function ImageUpload({ setReferenceImages }: Props) {
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   // TODO: Switch to Zustand
-  // const [screenRecorderState, setScreenRecorderState] =
-  //   useState<ScreenRecorderState>(ScreenRecorderState.INITIAL);
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-nocheck
+  const [screenRecorderState, setScreenRecorderState] =
+    useState<ScreenRecorderState>(ScreenRecorderState.INITIAL);
 
   const { getRootProps, getInputProps, isFocused, isDragAccept, isDragReject } =
     useDropzone({
