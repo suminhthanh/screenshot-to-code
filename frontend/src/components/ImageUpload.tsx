@@ -60,8 +60,8 @@ interface Props {
 function ImageUpload({ setReferenceImages }: Props) {
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   // TODO: Switch to Zustand
-  const [screenRecorderState, setScreenRecorderState] =
-    useState<ScreenRecorderState>(ScreenRecorderState.INITIAL);
+  // const [screenRecorderState, setScreenRecorderState] =
+  //   useState<ScreenRecorderState>(ScreenRecorderState.INITIAL);
 
   const { getRootProps, getInputProps, isFocused, isDragAccept, isDragReject } =
     useDropzone({
