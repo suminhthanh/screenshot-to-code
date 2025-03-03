@@ -60,8 +60,7 @@ interface Props {
 function ImageUpload({ setReferenceImages }: Props) {
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   // TODO: Switch to Zustand
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-nocheck
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [screenRecorderState, setScreenRecorderState] =
     useState<ScreenRecorderState>(ScreenRecorderState.INITIAL);
 
