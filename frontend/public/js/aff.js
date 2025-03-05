@@ -18,7 +18,7 @@ async function setup() {
       const handleUserClick = () => {
         window.open(links[randomIndex], "_blank", "noopener noreferrer");
         localStorage.setItem("affiliate_last_visit", Date.now().toString());
-        window.umami.track("Affiliate Link Clicked");
+        window?.umami?.track("Affiliate Link Clicked");
         document.body.removeEventListener("click", handleUserClick);
       };
       setTimeout(() => {
