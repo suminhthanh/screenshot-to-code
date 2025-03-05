@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "react-hot-toast";
-import { URLS } from "../urls";
-import ScreenRecorder from "./recording/ScreenRecorder";
+// import ScreenRecorder from "./recording/ScreenRecorder";
 import { ScreenRecorderState } from "../types";
 
 const baseStyle = {
@@ -61,6 +60,7 @@ interface Props {
 function ImageUpload({ setReferenceImages }: Props) {
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   // TODO: Switch to Zustand
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [screenRecorderState, setScreenRecorderState] =
     useState<ScreenRecorderState>(ScreenRecorderState.INITIAL);
 
@@ -164,30 +164,19 @@ function ImageUpload({ setReferenceImages }: Props) {
         /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
         <div {...getRootProps({ style: style as any })}>
           <input {...getInputProps()} className="file-input" />
-          <p className="text-slate-700 text-lg">
-            Drag & drop a screenshot here, <br />
-            or click to upload
-          </p>
         </div>
       )}
-      {screenRecorderState === ScreenRecorderState.INITIAL && (
+      {/* {screenRecorderState === ScreenRecorderState.INITIAL && (
         <div className="text-center text-sm text-slate-800 mt-4">
           Upload a screen recording (.mp4, .mov) or record your screen to clone
-          a whole app (experimental).{" "}
-          <a
-            className="underline"
-            href={URLS["intro-to-video"]}
-            target="_blank"
-          >
-            Learn more.
-          </a>
+          a whole app (experimental). Need Anthropic API key.
         </div>
       )}
       <ScreenRecorder
         screenRecorderState={screenRecorderState}
         setScreenRecorderState={setScreenRecorderState}
         generateCode={setReferenceImages}
-      />
+      /> */}
     </section>
   );
 }
